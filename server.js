@@ -18,11 +18,17 @@ app.get("/webhook", (req, res) => {
 });
 
 app.post("/webhook", async (req, res) => {
-  console.log("BODY RECEBIDO:", JSON.stringify(req.body, null, 2));
+  console.log("BODY RECEBIDO:");
+  console.log(JSON.stringify(req.body, null, 2));
+
+  console.log("=================================");
+  console.log("TIPO DA CHAVE:", typeof process.env.OPENAI_API_KEY);
+  console.log("TAMANHO DA CHAVE:", process.env.OPENAI_API_KEY?.length);
   console.log(
-    "OPENAI_API_KEY:",
-    process.env.OPENAI_API_KEY ? "ENCONTRADA" : "NÃO ENCONTRADA"
+    "CHAVE ENCONTRADA:",
+    process.env.OPENAI_API_KEY ? "SIM" : "NÃO"
   );
+  console.log("=================================");
 
   try {
     const mensagem =
@@ -38,14 +44,14 @@ app.post("/webhook", async (req, res) => {
         replies: [
           {
             message:
-              "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br",
-          },
-        ],
+              "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br"
+          }
+        ]
       });
     }
 
     const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: process.env.OPENAI_API_KEY
     });
 
     const resposta = await client.chat.completions.create({
@@ -54,43 +60,43 @@ app.post("/webhook", async (req, res) => {
         {
           role: "system",
           content: `Você é a atendente virtual da Pizzaria Delivery House.
-Responda em português do Brasil, de forma curta, simpática e profissional.
-Nunca diga que é uma IA da OpenAI.
+
+Responda sempre em português.
+
+Nunca diga que é uma IA.
 
 Informações:
 - Nome: Delivery House
 - Cardápio: www.pizzariadeliveryhouse.com.br
 - Horário: 18h às 23h20
-- Para pedidos, envie o link do cardápio.
-- Se perguntarem preço, sabores ou promoções, oriente a conferir no cardápio.`,
+- Quando o cliente quiser pedir, envie o link do cardápio.`
         },
         {
           role: "user",
-          content: String(mensagem),
-        },
-      ],
+          content: String(mensagem)
+        }
+      ]
     });
-
-    const textoResposta =
-      resposta.choices[0]?.message?.content || "Olá! Como posso ajudar?";
 
     return res.json({
       replies: [
         {
-          message: textoResposta,
-        },
-      ],
+          message: resposta.choices[0].message.content
+        }
+      ]
     });
+
   } catch (erro) {
-    console.error("ERRO OPENAI:", erro);
+    console.error("ERRO OPENAI:");
+    console.error(erro);
 
     return res.json({
       replies: [
         {
           message:
-            "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br",
-        },
-      ],
+            "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br"
+        }
+      ]
     });
   }
 });
