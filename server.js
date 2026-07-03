@@ -19,11 +19,14 @@ app.get("/webhook", (req, res) => {
 
 app.post("/webhook", async (req, res) => {
   console.log("BODY RECEBIDO:", JSON.stringify(req.body, null, 2));
+  console.log(
+    "OPENAI_API_KEY:",
+    process.env.OPENAI_API_KEY ? "ENCONTRADA" : "NÃO ENCONTRADA"
+  );
 
   try {
     const mensagem =
       req.body?.query?.message ||
-      req.body?.query ||
       req.body?.message ||
       req.body?.text ||
       req.body?.body ||
@@ -31,15 +34,13 @@ app.post("/webhook", async (req, res) => {
       "Olá";
 
     if (!process.env.OPENAI_API_KEY) {
-      console.log("OPENAI_API_KEY =", process.env.OPENAI_API_KEY);
-
-if (!process.env.OPENAI_API_KEY) {
+      return res.json({
         replies: [
           {
             message:
-              "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br"
-          }
-        ]
+              "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br",
+          },
+        ],
       });
     }
 
@@ -61,25 +62,24 @@ Informações:
 - Cardápio: www.pizzariadeliveryhouse.com.br
 - Horário: 18h às 23h20
 - Para pedidos, envie o link do cardápio.
-- Se perguntarem preço, sabores ou promoções, oriente a conferir no cardápio.`
+- Se perguntarem preço, sabores ou promoções, oriente a conferir no cardápio.`,
         },
         {
           role: "user",
-          content: String(mensagem)
-        }
-      ]
+          content: String(mensagem),
+        },
+      ],
     });
 
     const textoResposta =
-      resposta.choices[0]?.message?.content ||
-      "Olá! Como posso ajudar?";
+      resposta.choices[0]?.message?.content || "Olá! Como posso ajudar?";
 
     return res.json({
       replies: [
         {
-          message: textoResposta
-        }
-      ]
+          message: textoResposta,
+        },
+      ],
     });
   } catch (erro) {
     console.error("ERRO OPENAI:", erro);
@@ -88,9 +88,9 @@ Informações:
       replies: [
         {
           message:
-            "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br"
-        }
-      ]
+            "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br",
+        },
+      ],
     });
   }
 });
