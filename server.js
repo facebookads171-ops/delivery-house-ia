@@ -8,11 +8,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-console.log("OPENAI_API_KEY existe?", !!process.env.OPENAI_API_KEY);
-console.log("Primeiros caracteres:", process.env.OPENAI_API_KEY?.substring(0, 8));
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 app.get("/", (req, res) => {
   res.send("Delivery House IA online 🍕");
@@ -24,64 +19,58 @@ app.get("/webhook", (req, res) => {
 
 app.post("/webhook", async (req, res) => {
   try {
-    console.log("Mensagem recebida:", req.body);
-
-    // Tenta localizar a mensagem enviada pelo cliente
     const mensagem =
       req.body.message ||
       req.body.text ||
       req.body.body ||
       req.body.msg ||
       req.body.query ||
-      "";
+      "Olá";
 
-    if (!mensagem) {
+    if (!process.env.OPENAI_API_KEY) {
       return res.json({
         replies: [
           {
-            message: "Olá! Como posso ajudar?"
+            message: "Olá! Sou a Delivery House 🍕 Como posso ajudar?"
           }
         ]
       });
     }
+
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
 
     const resposta = await client.responses.create({
       model: "gpt-4.1-mini",
       input: `
 Você é a atendente virtual da Pizzaria Delivery House.
 
-Regras:
-- Responda em português.
-- Seja simpática.
-- Respostas curtas.
-- Nunca diga que é uma IA da OpenAI.
-- Quando não souber um preço, peça para consultar o cardápio.
-- Incentive o cliente a fazer o pedido.
+Responda em português, de forma curta, simpática e profissional.
+Nunca diga que é uma IA da OpenAI.
+Quando o cliente quiser pedir, envie o link:
+www.pizzariadeliveryhouse.com.br
 
 Mensagem do cliente:
 ${mensagem}
 `
     });
 
-    const texto =
-      resposta.output_text ||
-      "Desculpe, não consegui responder agora.";
-
     res.json({
       replies: [
         {
-          message: texto
+          message: resposta.output_text || "Como posso ajudar?"
         }
       ]
     });
 
   } catch (erro) {
-    console.error(erro);
+    console.error("Erro no webhook:", erro);
 
     res.json({
       replies: [
         {
-          message: "Desculpe, ocorreu um erro. Tente novamente em alguns instantes."
+          message: "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br"
         }
       ]
     });
