@@ -18,28 +18,23 @@ app.get("/webhook", (req, res) => {
 });
 
 app.post("/webhook", async (req, res) => {
-  console.log("BODY RECEBIDO:", JSON.stringify(req.body, null, 2));
+  // Esse log é vital! Ele vai mostrar no Railway exatamente o que o app do celular enviou
+  console.log("BODY RECEBIDO DO AUTO_RESPONDER:", JSON.stringify(req.body, null, 2));
 
   try {
+    // Captura o texto enviado pelo AutoResponder para WA (geralmente vem em 'query')
     const mensagem =
+      req.body?.query ||
       req.body?.message ||
       req.body?.text ||
       req.body?.body ||
       req.body?.msg ||
-      req.body?.query?.message ||
-      req.body?.query ||
-      req.body?.data?.message ||
-      req.body?.notification?.message ||
-      req.body?.senderMessage ||
       "Olá";
 
     if (!process.env.OPENAI_API_KEY) {
+      console.error("AVISO: Chave da OpenAI não encontrada nas variáveis de ambiente!");
       return res.json({
-        replies: [
-          {
-            message: "Olá! Sou a Delivery House 🍕 Como posso ajudar?"
-          }
-        ]
+        replies: [{ message: "Olá! Sou a Delivery House 🍕 Como posso ajudar?" }]
       });
     }
 
@@ -47,11 +42,13 @@ app.post("/webhook", async (req, res) => {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const resposta = await client.responses.create({
-      model: "gpt-4.1-mini",
-      input: `
-Você é a atendente virtual da Pizzaria Delivery House.
-
+    // Chamada corrigida para o padrão atual da OpenAI
+    const resposta = await client.chat.completions.create({
+      model: "gpt-4o-mini", 
+      messages: [
+        {
+          role: "system",
+          content: `Você é a atendente virtual da Pizzaria Delivery House.
 Responda em português, de forma curta, simpática e profissional.
 Nunca diga que é uma IA da OpenAI.
 
@@ -59,23 +56,30 @@ Informações da pizzaria:
 - Nome: Delivery House
 - Site do cardápio: www.pizzariadeliveryhouse.com.br
 - Horário: 18h às 23h20
-- Quando o cliente quiser pedir, envie o link do cardápio.
-
-Mensagem do cliente:
-${mensagem}
-`
+- Quando o cliente quiser pedir, envie o link do cardápio.`
+        },
+        {
+          role: "user",
+          content: mensagem
+        }
+      ]
     });
 
+    // Extrai o texto gerado pela Inteligência Artificial
+    const textoResposta = resposta.choices[0]?.message?.content || "Como posso ajudar?";
+
+    // Retorna no formato esperado pelo AutoResponder para WA
     return res.json({
       replies: [
         {
-          message: resposta.output_text || "Como posso ajudar?"
+          message: textoResposta
         }
       ]
     });
 
   } catch (erro) {
-    console.error("Erro no webhook:", erro);
+    // Se der qualquer erro na OpenAI, este log vai te dizer o motivo exato (Falta de saldo, chave inválida, etc)
+    console.error("Erro detalhado na chamada da OpenAI:", erro);
 
     return res.json({
       replies: [
