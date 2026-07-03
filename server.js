@@ -31,8 +31,9 @@ app.post("/webhook", async (req, res) => {
       "Olá";
 
     if (!process.env.OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY não encontrada");
-      return res.json({
+      console.log("OPENAI_API_KEY =", process.env.OPENAI_API_KEY);
+
+if (!process.env.OPENAI_API_KEY) {
         replies: [
           {
             message:
