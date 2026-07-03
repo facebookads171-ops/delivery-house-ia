@@ -51,7 +51,7 @@ app.post("/webhook", async (req, res) => {
     }
 
     const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
+      apiKey: process.env.OPENAI_API_KEYsk-proj-40L8UBFl9V2EQaJbJdzBEa8FMUmGqUDFWQuVIwBn8YU9Ffx0BimEArQPc_5vlMNJUhuzM4FXNBT3BlbkFJggnMFCpewWGoCCKdHKfp3bF94h0xw5yTRg8E7Dd4qcK8r2-joOpimiiyHNF_h1NqVmZPoVgrIA
     });
 
     const resposta = await client.chat.completions.create({
