@@ -1,102 +1,102 @@
-require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
+require("dotenv").config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 app.get("/", (req, res) => {
   res.send("Delivery House IA online 🍕");
 });
 
-app.get("/webhook", (req, res) => {
-  res.send("Webhook Delivery House IA online");
-});
+async function gerarResposta(mensagem) {
+  if (!mensagem) {
+    return "Olá! Como posso ajudar no seu pedido? 🍕";
+  }
+
+  const resposta = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content:
+          "Você é o atendente virtual da Pizzaria Delivery House. Responda de forma curta, educada e objetiva. Ajude clientes com pedidos, sabores de pizza, horários, entrega e formas de pagamento. Sempre incentive o cliente a finalizar o pedido pelo cardápio digital: www.pizzariadeliveryhouse.com.br",
+      },
+      {
+        role: "user",
+        content: mensagem,
+      },
+    ],
+  });
+
+  return resposta.choices[0].message.content;
+}
 
 app.post("/webhook", async (req, res) => {
-  console.log("BODY RECEBIDO:");
-  console.log(JSON.stringify(req.body, null, 2));
-
-  console.log("=================================");
-  console.log("TIPO DA CHAVE:", typeof process.env.OPENAI_API_KEY);
-  console.log("TAMANHO DA CHAVE:", process.env.OPENAI_API_KEY?.length);
-  console.log(
-    "CHAVE ENCONTRADA:",
-    process.env.OPENAI_API_KEY ? "SIM" : "NÃO"
-  );
-  console.log("=================================");
-
+  console.log("Headers:", req.headers);
+console.log("Body:", JSON.stringify(req.body, null, 2));
   try {
     const mensagem =
-      req.body?.query?.message ||
-      req.body?.message ||
-      req.body?.text ||
-      req.body?.body ||
-      req.body?.msg ||
-      "Olá";
+      req.body.message ||
+      req.body.mensagem ||
+      req.body.text ||
+      req.body.query ||
+      req.body.body ||
+      "";
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.json({
-        replies: [
-          {
-            message:
-              "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br"
-          }
-        ]
-      });
-    }
+    const textoResposta = await gerarResposta(mensagem);
 
-    const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEYsk-proj-40L8UBFl9V2EQaJbJdzBEa8FMUmGqUDFWQuVIwBn8YU9Ffx0BimEArQPc_5vlMNJUhuzM4FXNBT3BlbkFJggnMFCpewWGoCCKdHKfp3bF94h0xw5yTRg8E7Dd4qcK8r2-joOpimiiyHNF_h1NqVmZPoVgrIA
-    });
-
-    const resposta = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Você é a atendente virtual da Pizzaria Delivery House.
-
-Responda sempre em português.
-
-Nunca diga que é uma IA.
-
-Informações:
-- Nome: Delivery House
-- Cardápio: www.pizzariadeliveryhouse.com.br
-- Horário: 18h às 23h20
-- Quando o cliente quiser pedir, envie o link do cardápio.`
-        },
-        {
-          role: "user",
-          content: String(mensagem)
-        }
-      ]
-    });
-
-    return res.json({
+    res.json({
       replies: [
         {
-          message: resposta.choices[0].message.content
-        }
-      ]
+          message: textoResposta,
+        },
+      ],
     });
+  } catch (error) {
+    console.error(error);
 
-  } catch (erro) {
-    console.error("ERRO OPENAI:");
-    console.error(erro);
-
-    return res.json({
+    res.json({
       replies: [
         {
           message:
-            "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br"
-        }
-      ]
+            "Desculpe, tive uma instabilidade agora. Por favor, tente novamente em instantes. 🍕",
+        },
+      ],
+    });
+  }
+});
+
+app.get("/webhook", async (req, res) => {
+  try {
+    const mensagem = req.query.message || req.query.text || req.query.query || "";
+    const textoResposta = await gerarResposta(mensagem);
+
+    res.json({
+      replies: [
+        {
+          message: textoResposta,
+        },
+      ],
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.json({
+      replies: [
+        {
+          message:
+            "Desculpe, tive uma instabilidade agora. Por favor, tente novamente em instantes. 🍕",
+        },
+      ],
     });
   }
 });
