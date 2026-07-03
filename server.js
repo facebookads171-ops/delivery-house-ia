@@ -18,13 +18,19 @@ app.get("/webhook", (req, res) => {
 });
 
 app.post("/webhook", async (req, res) => {
+  console.log("BODY RECEBIDO:", JSON.stringify(req.body, null, 2));
+
   try {
     const mensagem =
-      req.body.message ||
-      req.body.text ||
-      req.body.body ||
-      req.body.msg ||
-      req.body.query ||
+      req.body?.message ||
+      req.body?.text ||
+      req.body?.body ||
+      req.body?.msg ||
+      req.body?.query?.message ||
+      req.body?.query ||
+      req.body?.data?.message ||
+      req.body?.notification?.message ||
+      req.body?.senderMessage ||
       "Olá";
 
     if (!process.env.OPENAI_API_KEY) {
@@ -48,15 +54,19 @@ Você é a atendente virtual da Pizzaria Delivery House.
 
 Responda em português, de forma curta, simpática e profissional.
 Nunca diga que é uma IA da OpenAI.
-Quando o cliente quiser pedir, envie o link:
-www.pizzariadeliveryhouse.com.br
+
+Informações da pizzaria:
+- Nome: Delivery House
+- Site do cardápio: www.pizzariadeliveryhouse.com.br
+- Horário: 18h às 23h20
+- Quando o cliente quiser pedir, envie o link do cardápio.
 
 Mensagem do cliente:
 ${mensagem}
 `
     });
 
-    res.json({
+    return res.json({
       replies: [
         {
           message: resposta.output_text || "Como posso ajudar?"
@@ -67,7 +77,7 @@ ${mensagem}
   } catch (erro) {
     console.error("Erro no webhook:", erro);
 
-    res.json({
+    return res.json({
       replies: [
         {
           message: "Olá! Sou a Delivery House 🍕 Faça seu pedido em www.pizzariadeliveryhouse.com.br"
