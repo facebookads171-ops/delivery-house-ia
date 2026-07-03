@@ -8,7 +8,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+console.log("OPENAI_API_KEY existe?", !!process.env.OPENAI_API_KEY);
+console.log("Primeiros caracteres:", process.env.OPENAI_API_KEY?.substring(0, 8));
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
